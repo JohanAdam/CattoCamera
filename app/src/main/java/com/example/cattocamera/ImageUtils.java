@@ -8,8 +8,6 @@ import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.util.Log;
-import android.widget.Toast;
 
 import androidx.core.content.FileProvider;
 import androidx.exifinterface.media.ExifInterface;
@@ -19,6 +17,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import timber.log.Timber;
 
 public class ImageUtils {
 
@@ -85,7 +85,7 @@ public class ImageUtils {
    * @return uri for the image.
    */
   public Uri getCameraIntent(Activity activity) {
-    Log.e(TAG,"getCameraIntent");
+    Timber.e("getCameraIntent");
 
     Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
     // Ensure that there's a camera activity to handle the intent
@@ -97,7 +97,7 @@ public class ImageUtils {
       } catch (IOException ex) {
         // Error occurred while creating the File
         ex.printStackTrace();
-        showToast(activity, "Failed to create direction for store photos, please check your permission for this app.");
+        Utils.showToast(activity, "Failed to create direction for store photos, please check your permission for this app.");
         return null;
       }
       // Continue only if the File was successfully created
@@ -110,11 +110,11 @@ public class ImageUtils {
 
         return photoURI;
       } else {
-        showToast(activity, "Failed to create direction for store photos, please check your permission for this app.");
+        Utils.showToast(activity, "Failed to create direction for store photos, please check your permission for this app.");
         return null;
       }
     } else {
-      showToast(activity, "Failed to create direction for store photos, please check your permission for this app.");
+      Utils.showToast(activity, "Failed to create direction for store photos, please check your permission for this app.");
       return null;
     }
   }
@@ -123,7 +123,7 @@ public class ImageUtils {
    * Use for call intent for gallery.
    */
   public void getGalleryIntent(Activity activity) {
-    Log.d(TAG,"getGalleryIntent");
+    Timber.d("getGalleryIntent");
 
     Intent intent = new Intent();
     intent.setType("image/*");
@@ -137,7 +137,7 @@ public class ImageUtils {
       ExifInterface ei = new ExifInterface(inputStream);
       int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
               ExifInterface.ORIENTATION_UNDEFINED);
-      Log.e(TAG, "onPostExecute : Orientation : " + orientation);
+      Timber.e("onPostExecute : Orientation : %s", orientation);
 
       Bitmap rotatedBitmap;
       switch(orientation) {
@@ -174,14 +174,6 @@ public class ImageUtils {
 
   public interface ResizeImageCallback {
     void onReturn(Bitmap bitmap);
-  }
-
-  private static void showToast(Context context, String msg) {
-    Log.d(TAG,"showToast " + msg);
-    Toast.makeText(
-        context.getApplicationContext(),
-        msg,
-        Toast.LENGTH_SHORT).show();
   }
 
 }

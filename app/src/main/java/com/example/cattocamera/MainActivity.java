@@ -28,12 +28,11 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import timber.log.Timber;
+
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
-
-    private static final String TAG = "MainActivity";
-
     private Uri imageUri = null;
 
     @Override
@@ -44,9 +43,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(view);
 
         binding.btnCamera.setOnClickListener(v -> {
+            //Check permission.
             if ((ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED) &&
                     (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) &&
                     ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+                //Ask for permission.
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 66);
                 return;
             }
@@ -59,9 +60,9 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 66 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Log.e(TAG, "onRequestPermissionsResult: Permission Granted");
+            Timber.e("onRequestPermissionsResult: Permission Granted");
         } else {
-            Log.e(TAG, "onRequestPermissionsResult: PERMISSION DENIED");
+            Timber.e("onRequestPermissionsResult: PERMISSION DENIED");
         }
     }
 
@@ -73,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == RECEIPT_CAMERA && resultCode == RESULT_OK) {
-            Log.d(TAG, "onActivityResult: RESULT_OK ");
+            Timber.d("onActivityResult: RESULT_OK ");
             try {
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
                 ImageUtils.checkBitmapRotationEXIF(this, imageUri, bitmap, returnBitmap -> binding.iv.setImageBitmap(returnBitmap));
@@ -82,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
         } else {
-            Log.d(TAG, "onActivityResult: RESULT_NOT_OK");
+            Timber.d("onActivityResult: RESULT_NOT_OK");
         }
     }
 }
