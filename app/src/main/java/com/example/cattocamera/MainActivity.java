@@ -7,26 +7,21 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.content.FileProvider;
 
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.View;
-import android.widget.Toast;
 
 import com.example.cattocamera.databinding.ActivityMainBinding;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
-import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import timber.log.Timber;
 
@@ -51,7 +46,12 @@ public class MainActivity extends AppCompatActivity {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 66);
                 return;
             }
-            dispatchTakePictureIntent();
+
+            new MaterialAlertDialogBuilder(this, R.style.MaterialAlertDialog_MaterialComponents)
+                    .setMessage("Select Source")
+                    .setNegativeButton("Gallery", (dialog, which) -> galleryIntent())
+                    .setPositiveButton("Camera", (dialog, which) -> cameraIntent())
+                    .show();
         });
 
     }
@@ -61,29 +61,46 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 66 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             Timber.e("onRequestPermissionsResult: Permission Granted");
+            Utils.showToast(this,"onRequestPermissionsResult: Permission Granted");
         } else {
             Timber.e("onRequestPermissionsResult: PERMISSION DENIED");
+            Utils.showToast(this,"onRequestPermissionsResult: PERMISSION DENIED!");
         }
     }
 
-    private void dispatchTakePictureIntent() {
+    private void galleryIntent() {
+        new ImageUtils().getGalleryIntent(this);
+    }
+
+    private void cameraIntent() {
         imageUri = new ImageUtils().getCameraIntent(this);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RECEIPT_CAMERA && resultCode == RESULT_OK) {
+        if (resultCode == RESULT_OK) {
             Timber.d("onActivityResult: RESULT_OK ");
             try {
-                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+                
+            Bitmap bitmap;
+            
+            if (requestCode == RECEIPT_CAMERA) {
+                Timber.d("onActivityResult : CAMERA");
+                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+            } else {
+                Timber.d("onActivityResult : GALLERY");
+                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), data.getData());
+            }
+                
                 ImageUtils.checkBitmapRotationEXIF(this, imageUri, bitmap, returnBitmap -> binding.iv.setImageBitmap(returnBitmap));
             } catch (IOException e) {
                 e.printStackTrace();
+                Utils.showToast(this, e.getMessage());
             }
-
         } else {
             Timber.d("onActivityResult: RESULT_NOT_OK");
+            Utils.showToast(this, "RESULT NOT OK!");
         }
     }
 }
