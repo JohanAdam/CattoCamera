@@ -4,33 +4,21 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Environment;
-import android.os.Looper;
 import android.provider.MediaStore;
-import android.util.Base64;
 import android.util.Log;
-import android.widget.ImageView;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 import androidx.exifinterface.media.ExifInterface;
-import androidx.fragment.app.Fragment;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import javax.sql.DataSource;
 
 public class ImageUtils {
 
@@ -93,7 +81,7 @@ public class ImageUtils {
 
   /**
    * Use for call intent for camera.
-   * @param activity caller fragment.
+   * @param activity caller activity.
    * @return uri for the image.
    */
   public Uri getCameraIntent(Activity activity) {
@@ -133,15 +121,14 @@ public class ImageUtils {
 
   /**
    * Use for call intent for gallery.
-   * @param fragment caller fragment.
    */
-  public void getGalleryIntent(Fragment fragment) {
+  public void getGalleryIntent(Activity activity) {
     Log.d(TAG,"getGalleryIntent");
 
     Intent intent = new Intent();
     intent.setType("image/*");
     intent.setAction(Intent.ACTION_GET_CONTENT);
-    fragment.startActivityForResult(intent, RECEIPT_GALLERY);
+    activity.startActivityForResult(intent, RECEIPT_GALLERY);
   }
 
   public static void checkBitmapRotationEXIF(Context context, Uri imageUri, Bitmap bitmap, ResizeImageCallback callback) {
@@ -195,96 +182,6 @@ public class ImageUtils {
         context.getApplicationContext(),
         msg,
         Toast.LENGTH_SHORT).show();
-  }
-
-  /**
-   * Check if the image is resized or not.
-   */
-  private static boolean isImageResized(Bitmap bitmap) {
-    Log.d(TAG,"isImageResized");
-    ByteArrayOutputStream stream = new ByteArrayOutputStream();
-    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-    byte[] imageInByte = stream.toByteArray();
-    long lengthbmp = imageInByte.length / 1024; // SIZE IN MB
-
-    if(lengthbmp < 400) {
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Resize image to certain resolution.
-   */
-  public static class resizeImageTask extends AsyncTask<Void, Void, Bitmap> {
-
-    private Bitmap bitmap;
-    private ResizeImageCallback callback;
-
-    public resizeImageTask(Bitmap bitmap, ResizeImageCallback callback) {
-      this.bitmap = bitmap;
-      this.callback = callback;
-    }
-
-    @Override
-    protected void onPreExecute() {
-      super.onPreExecute();
-    }
-
-    @Override
-    protected Bitmap doInBackground(Void... voids) {
-
-      if (Looper.myLooper() == null) {
-        Looper.prepare();
-      }
-
-      while (!isImageResized(bitmap)) {
-        bitmap = Bitmap.createScaledBitmap(bitmap, (int)(bitmap.getWidth() * 0.8f), (int)(bitmap.getHeight() * 0.8f), true);
-      }
-
-      return bitmap;
-    }
-
-    @Override
-    protected void onPostExecute(Bitmap bitmap) {
-      callback.onReturn(bitmap);
-    }
-  }
-
-  public void deleteFiles() {
-    Log.e(TAG,"deleteFiles");
-    try {
-      if (fileDirs.isDirectory())
-      {
-        String[] children = fileDirs.list();
-        for (int i = 0; i < children.length; i++)
-        {
-          new File(fileDirs, children[i]).delete();
-          Log.e(TAG,"Delete item.");
-        }
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
-
-  private static Bitmap getResizedBitmap(Bitmap bitmap, int newWidth, int newHeight) {
-    Log.e(TAG,"getResizedBitmap");
-    Bitmap resizedBitmap = Bitmap.createBitmap(newWidth, newHeight, Bitmap.Config.ARGB_8888);
-
-    float scaleX = newWidth / (float) bitmap.getWidth();
-    float scaleY = newHeight / (float) bitmap.getHeight();
-    float pivotX = 0;
-    float pivotY = 0;
-
-    Matrix scaleMatrix = new Matrix();
-    scaleMatrix.setScale(scaleX, scaleY, pivotX, pivotY);
-
-    Canvas canvas = new Canvas(resizedBitmap);
-    canvas.setMatrix(scaleMatrix);
-    canvas.drawBitmap(bitmap, 0, 0, new Paint(Paint.FILTER_BITMAP_FLAG));
-
-    return resizedBitmap;
   }
 
 }
