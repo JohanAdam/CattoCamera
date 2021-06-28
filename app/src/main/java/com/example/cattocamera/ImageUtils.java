@@ -3,6 +3,7 @@ package com.example.cattocamera;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.net.Uri;
@@ -135,6 +136,7 @@ public class ImageUtils {
     try {
       InputStream inputStream = context.getContentResolver().openInputStream(imageUri);
       ExifInterface ei = new ExifInterface(inputStream);
+
       int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
               ExifInterface.ORIENTATION_UNDEFINED);
       Timber.e("onPostExecute : Orientation : %s", orientation);
@@ -174,6 +176,39 @@ public class ImageUtils {
 
   public interface ResizeImageCallback {
     void onReturn(Bitmap bitmap);
+  }
+
+  public static String getRealPathFromURI(Context context, Uri contentUri) {
+    Cursor cursor = context.getContentResolver().query(contentUri, null, null, null, null);
+    cursor.moveToFirst();
+    String document_id = cursor.getString(0);
+    document_id = document_id.substring(document_id.lastIndexOf(":")+1);
+    cursor.close();
+
+    cursor = context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,null
+            , MediaStore.Images.Media._ID + " = ? ", new String[]{document_id}, null);
+    cursor.moveToFirst();
+    String path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
+    cursor.close();
+
+    return path;
+  }
+
+  public static String getImageDateTime(Context context, String imagesFilePath) {
+    Timber.d("getImageDateTime : ");
+    try {
+      Timber.d("getImageDateTime : YAY");
+      InputStream inputStream = context.getContentResolver().openInputStream(Uri.parse(imagesFilePath));
+      ExifInterface ei = new ExifInterface(inputStream);
+
+      String dateTime = ei.getAttribute(ExifInterface.TAG_DATETIME);
+      Timber.e("getImageDateTime : dateTime return is %s", dateTime);
+      return dateTime;
+    } catch (Exception e) {
+      Timber.e("getImageDateTime : ERROR");
+      e.printStackTrace();
+      return "ERROR " + e.getMessage();
+    }
   }
 
 }
