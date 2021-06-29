@@ -85,6 +85,7 @@ public class ImageUtils {
    * @param activity caller activity.
    * @return uri for the image.
    */
+  private File photoFile = null;
   public Uri getCameraIntent(Activity activity) {
     Timber.e("getCameraIntent");
 
@@ -92,7 +93,7 @@ public class ImageUtils {
     // Ensure that there's a camera activity to handle the intent
     if (takePictureIntent.resolveActivity(activity.getPackageManager()) != null) {
       // Create the File where the photo should go
-      File photoFile = null;
+//      File photoFile = null;
       try {
         photoFile = createFile(activity, FILE_EXTENSION.JPG, "JPEG_");
       } catch (IOException ex) {
@@ -118,6 +119,10 @@ public class ImageUtils {
       Utils.showToast(activity, "Failed to create direction for store photos, please check your permission for this app.");
       return null;
     }
+  }
+
+  public File getPhotoFile() {
+    return photoFile;
   }
 
   /**

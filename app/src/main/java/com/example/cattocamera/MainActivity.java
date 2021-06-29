@@ -27,6 +27,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Date;
 
 import timber.log.Timber;
 
@@ -77,8 +78,10 @@ public class MainActivity extends AppCompatActivity {
         new ImageUtils().getGalleryIntent(this);
     }
 
+    private ImageUtils imageUtils = null;
     private void cameraIntent() {
-        imageUri = new ImageUtils().getCameraIntent(this);
+        imageUtils = new ImageUtils();
+        imageUri = imageUtils.getCameraIntent(this);
     }
 
     @Override
@@ -103,7 +106,17 @@ public class MainActivity extends AppCompatActivity {
                 if (requestCode == RECEIPT_CAMERA) {
                     ImageUtils.checkBitmapRotationEXIF(this, imageUri, bitmap, returnBitmap -> binding.iv.setImageBitmap(returnBitmap));
                     dateTime = ImageUtils.getImageDateTime(this, imageUri.toString());
+//                    File file = new File(String.valueOf(imageUri));
+                    File file = imageUtils.getPhotoFile();
+                    Timber.e("onActivityResult : File is %s", file.exists());
+                    Timber.e("onActivityResult : file date created is " + new Date(file.lastModified()).toString());
                 } else {
+                    String fileUri = getImageFilePathGGWP(data.getData());
+                    Timber.e("onActivityResult : File Uri path is %s", fileUri);
+                    File file = new File(fileUri);
+                    Timber.e("onActivityResult : File is %s", file.exists());
+                    Timber.e("onActivityResult : file date created is " + new Date(file.lastModified()).toString());
+
                     Uri imageUrg = Uri.fromFile(new File(String.valueOf(data.getData())));
 
 //                    ImageUtils.checkBitmapRotationEXIF(this, imageUrg, bitmap, bitbit -> binding.iv.setImageBitmap(bitbit));
@@ -149,6 +162,23 @@ public class MainActivity extends AppCompatActivity {
             }
         }//End of try-catch block
         return result;
+    }
+
+    public String getImageFilePathGGWP(Uri uri) {
+
+        File file = new File(uri.getPath());
+        String[] filePath = file.getPath().split(":");
+        String image_id = filePath[filePath.length - 1];
+
+        Cursor cursor = getContentResolver().query(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null, MediaStore.Images.Media._ID + " = ? ", new String[]{image_id}, null);
+        if (cursor != null) {
+            cursor.moveToFirst();
+            String imagePath = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
+
+            cursor.close();
+            return imagePath;
+        }
+        return null;
     }
 
     public static String getImageInfo(Context context, Uri photoUri) {
