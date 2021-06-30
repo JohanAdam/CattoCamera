@@ -26,6 +26,7 @@ import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.format.DateFormat;
 import android.view.View;
 
 import com.example.cattocamera.databinding.ActivityMainBinding;
@@ -111,35 +112,37 @@ public class MainActivity extends AppCompatActivity {
                     bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), data.getData());
                 }
 
-                String lastModifiedDate = "";
-                Bitmap bitmap1 = bitmap;
+                Date lastModifiedDate;
+                Bitmap resultBitmap = bitmap;
                 if (requestCode == RECEIPT_CAMERA) {
-                    ImageUtils.checkBitmapRotationEXIF(this, imageUri, bitmap, returnBitmap -> {
-//                        binding.iv.setImageBitmap(returnBitmap)
-//                        drawTextToBitmap(this, returnBitmap, "GGWP", true);
-                        drawTextToBitmap(this, returnBitmap, "FUCK OFF", "GGWP",false);
-                    });
+                    //Get photo file path.
                     File file = imageUtils.getPhotoFile();
 
-                    lastModifiedDate = new Date(file.lastModified()).toString();
+                    //Get file last modified date.
+                    lastModifiedDate = new Date(file.lastModified());
 
                     Timber.e("onActivityResult : File is %s", file.exists());
-                    Timber.e("onActivityResult : file date created is " + lastModifiedDate);
+                    Timber.e("onActivityResult : file date created is " + lastModifiedDate.toString());
 
+                    //Set bitmap to UI.
+                    resultBitmap = ImageUtils.checkBitmapRotationEXIF(this, imageUri, bitmap);
                 } else {
-                    String fileUri = getImageFilePathGGWP(data.getData());
+                    //Get photo file path.
+                    String fileUri = imageUtils.getImageFilePath(this, data.getData());
                     File file = new File(fileUri);
 
-                    lastModifiedDate = new Date(file.lastModified()).toString();
+                    //Get file last modified date.
+                    lastModifiedDate = new Date(file.lastModified());
 
                     Timber.e("onActivityResult : File is %s", file.exists());
-                    Timber.e("onActivityResult : file date created is " + lastModifiedDate);
+                    Timber.e("onActivityResult : file date created is " + lastModifiedDate.toString());
 
-                    int rotationGallery = getRotationFromGallery(this, data.getData());
-                    Timber.e("onActivityResult : rotationGallery : %s", rotationGallery);
+                    //Set bitmap to UI.
+//                    setImage(bitmap);
                 }
 
-                binding.tvImgDatetime.setText(lastModifiedDate);
+                String date = DateFormat.format("dd MMM yyyy\nhh:mm:ss a", lastModifiedDate).toString();
+                setImage(imageUtils.drawTextToBitmap(this, resultBitmap, "Nyan Nyan", date));
             } catch (IOException e) {
                 Timber.e("onActivityResult : ERROR");
                 e.printStackTrace();
@@ -151,95 +154,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * getting the rotated image using Exif taken from gallery
-     *
-     * @param context  context of the activity where you want to receive result
-     * @param imageUri uri of the file to be rotated
-     * @return orientation of the image
-     */
-    public static int getRotationFromGallery(Context context, Uri imageUri) {
-        int result = 0;
-        String[] columns = {MediaStore.Images.Media.DATE_TAKEN};
-        Cursor cursor = null;
-        try {
-            cursor = context.getContentResolver().query(imageUri, columns, null, null, null);
-            if (cursor != null && cursor.moveToFirst()) {
-                int orientationColumnIndex = cursor.getColumnIndex(columns[0]);
-                result = cursor.getInt(orientationColumnIndex);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            //Do nothing
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }//End of try-catch block
-        return result;
-    }
-
-    public String getImageFilePathGGWP(Uri uri) {
-
-        File file = new File(uri.getPath());
-        String[] filePath = file.getPath().split(":");
-        String image_id = filePath[filePath.length - 1];
-
-        Cursor cursor = getContentResolver().query(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null, MediaStore.Images.Media._ID + " = ? ", new String[]{image_id}, null);
-        if (cursor != null) {
-            cursor.moveToFirst();
-            String imagePath = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
-
-            cursor.close();
-            return imagePath;
-        }
-        return null;
-    }
-
-
-    public void drawTextToBitmap(Context gContext,
-                                   Bitmap bitmap,
-                                   String textBottomLeft,
-                                   String textBottomRight,
-                                 boolean isRight) {
-        Resources resources = gContext.getResources();
-        float scale = resources.getDisplayMetrics().density;
-        android.graphics.Bitmap.Config bitmapConfig =
-                bitmap.getConfig();
-        if (bitmapConfig == null) {
-            bitmapConfig = android.graphics.Bitmap.Config.ARGB_8888;
-        }
-        bitmap = bitmap.copy(bitmapConfig, true);
-        Canvas canvas = new Canvas(bitmap);
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setColor(getResources().getColor(R.color.white));
-//        paint.setTypeface(Typeface.createFromAsset(getAssets(), "fonts/DS-DIGI.TTF"));
-        paint.setTextSize((int) (14 * scale));
-        paint.setShadowLayer(10f, 1f, 1f, getResources().getColor(R.color.black));
-        Rect bounds = new Rect();
-        paint.getTextBounds(textBottomRight, 0, textBottomRight.length(), bounds);
-
-        //Center.
-//        int x = (bitmap.getWidth() - bounds.width()) / 2;
-//        int y = (bitmap.getHeight() + bounds.height()) / 2;
-
-        //Left bottom.
-//        int x;
-//        int y;
-//        if (isRight) {
-            //Right bottom.
-            int horizontalSpacing = 24;
-            int verticalSpacing = 36;
-            int xRight = (bitmap.getWidth() - bounds.width()) - horizontalSpacing;//(bitmap.getWidth() - bounds.width()) / 2;
-            int yRight = bitmap.getHeight() - verticalSpacing;//(bitmap.getHeight() + bounds.height()) / 2;
-//        } else {
-//            int horizontalSpacing = 24;
-//            int verticalSpacing = 36;
-            int xLeft = horizontalSpacing;//(bitmap.getWidth() - bounds.width()) / 2;
-            int yLeft = bitmap.getHeight()-verticalSpacing;
-//        }
-        canvas.drawText(textBottomRight, xRight, yRight, paint);
-        canvas.drawText(textBottomLeft, xLeft, yLeft, paint);
+    private void setImage(Bitmap bitmap) {
         binding.iv.setImageBitmap(bitmap);
     }
+
 }

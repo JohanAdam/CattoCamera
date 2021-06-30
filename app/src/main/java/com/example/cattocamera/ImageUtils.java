@@ -3,9 +3,13 @@ package com.example.cattocamera;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -137,7 +141,7 @@ public class ImageUtils {
     activity.startActivityForResult(intent, RECEIPT_GALLERY);
   }
 
-  public static void checkBitmapRotationEXIF(Context context, Uri imageUri, Bitmap bitmap, ResizeImageCallback callback) {
+  public static Bitmap checkBitmapRotationEXIF(Context context, Uri imageUri, Bitmap bitmap) {
     try {
       InputStream inputStream = context.getContentResolver().openInputStream(imageUri);
       ExifInterface ei = new ExifInterface(inputStream);
@@ -165,11 +169,12 @@ public class ImageUtils {
         default:
           rotatedBitmap = bitmap;
       }
-      callback.onReturn(rotatedBitmap);
+//      callback.onReturn(rotatedBitmap);
+      return rotatedBitmap;
     } catch (Exception e) {
       e.printStackTrace();
-      callback.onReturn(bitmap);
     }
+    return bitmap;
   }
 
   public static Bitmap rotateImage(Bitmap source, float angle) {
@@ -199,21 +204,67 @@ public class ImageUtils {
     return path;
   }
 
-  public static String getImageDateTime(Context context, String imagesFilePath) {
-    Timber.d("getImageDateTime : ");
-    try {
-      Timber.d("getImageDateTime : YAY");
-      InputStream inputStream = context.getContentResolver().openInputStream(Uri.parse(imagesFilePath));
-      ExifInterface ei = new ExifInterface(inputStream);
-
-      String dateTime = ei.getAttribute(ExifInterface.TAG_DATETIME);
-      Timber.e("getImageDateTime : dateTime return is %s", dateTime);
-      return dateTime;
-    } catch (Exception e) {
-      Timber.e("getImageDateTime : ERROR");
-      e.printStackTrace();
-      return "ERROR " + e.getMessage();
+  public Bitmap drawTextToBitmap(Context context,
+                               Bitmap bitmap,
+                               String textBottomLeft,
+                               String textBottomRight) {
+    Resources resources = context.getResources();
+    float scale = resources.getDisplayMetrics().density;
+    android.graphics.Bitmap.Config bitmapConfig =
+            bitmap.getConfig();
+    if (bitmapConfig == null) {
+      bitmapConfig = android.graphics.Bitmap.Config.ARGB_8888;
     }
+    bitmap = bitmap.copy(bitmapConfig, true);
+    Canvas canvas = new Canvas(bitmap);
+    Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    paint.setColor(resources.getColor(R.color.white));
+//        paint.setTypeface(Typeface.createFromAsset(getAssets(), "fonts/DS-DIGI.TTF"));
+    paint.setTextSize((int) (14 * scale));
+    paint.setShadowLayer(10f, 1f, 1f, resources.getColor(R.color.black));
+    Rect bounds = new Rect();
+    paint.getTextBounds(textBottomRight, 0, textBottomRight.length(), bounds);
+
+    //Center.
+//        int x = (bitmap.getWidth() - bounds.width()) / 2;
+//        int y = (bitmap.getHeight() + bounds.height()) / 2;
+
+    //Left bottom.
+//        int x;
+//        int y;
+//        if (isRight) {
+    //Right bottom.
+    int horizontalSpacing = 24;
+    int verticalSpacing = 36;
+    int xRight = (bitmap.getWidth() - bounds.width()) - horizontalSpacing;//(bitmap.getWidth() - bounds.width()) / 2;
+    int yRight = bitmap.getHeight() - verticalSpacing;//(bitmap.getHeight() + bounds.height()) / 2;
+//        } else {
+//            int horizontalSpacing = 24;
+//            int verticalSpacing = 36;
+    int xLeft = horizontalSpacing;//(bitmap.getWidth() - bounds.width()) / 2;
+    int yLeft = bitmap.getHeight()-verticalSpacing;
+//        }
+    canvas.drawText(textBottomRight, xRight, yRight, paint);
+    canvas.drawText(textBottomLeft, xLeft, yLeft, paint);
+
+    return bitmap;
+  }
+
+  public String getImageFilePath(Context context, Uri uri) {
+
+    File file = new File(uri.getPath());
+    String[] filePath = file.getPath().split(":");
+    String image_id = filePath[filePath.length - 1];
+
+    Cursor cursor = context.getContentResolver().query(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null, MediaStore.Images.Media._ID + " = ? ", new String[]{image_id}, null);
+    if (cursor != null) {
+      cursor.moveToFirst();
+      String imagePath = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
+
+      cursor.close();
+      return imagePath;
+    }
+    return null;
   }
 
 }
