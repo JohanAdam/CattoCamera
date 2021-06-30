@@ -33,6 +33,8 @@ import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity {
 
+    private ImageUtils imageUtils = null;
+
     private ActivityMainBinding binding;
     private Uri imageUri = null;
 
@@ -42,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         View view = binding.getRoot();
         setContentView(view);
+
+        imageUtils = new ImageUtils();
 
         binding.btnCamera.setOnClickListener(v -> {
             //Check permission.
@@ -75,12 +79,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void galleryIntent() {
-        new ImageUtils().getGalleryIntent(this);
+        imageUtils.getGalleryIntent(this);
     }
 
-    private ImageUtils imageUtils = null;
     private void cameraIntent() {
-        imageUtils = new ImageUtils();
         imageUri = imageUtils.getCameraIntent(this);
     }
 
@@ -102,29 +104,29 @@ public class MainActivity extends AppCompatActivity {
                     bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), data.getData());
                 }
 
-                String dateTime;
+                String lastModifiedDate = "";
                 if (requestCode == RECEIPT_CAMERA) {
                     ImageUtils.checkBitmapRotationEXIF(this, imageUri, bitmap, returnBitmap -> binding.iv.setImageBitmap(returnBitmap));
-                    dateTime = ImageUtils.getImageDateTime(this, imageUri.toString());
-//                    File file = new File(String.valueOf(imageUri));
                     File file = imageUtils.getPhotoFile();
+
+                    lastModifiedDate = new Date(file.lastModified()).toString();
+
                     Timber.e("onActivityResult : File is %s", file.exists());
-                    Timber.e("onActivityResult : file date created is " + new Date(file.lastModified()).toString());
+                    Timber.e("onActivityResult : file date created is " + lastModifiedDate);
+
                 } else {
                     String fileUri = getImageFilePathGGWP(data.getData());
-                    Timber.e("onActivityResult : File Uri path is %s", fileUri);
                     File file = new File(fileUri);
+
+                    lastModifiedDate = new Date(file.lastModified()).toString();
+
                     Timber.e("onActivityResult : File is %s", file.exists());
-                    Timber.e("onActivityResult : file date created is " + new Date(file.lastModified()).toString());
+                    Timber.e("onActivityResult : file date created is " + lastModifiedDate);
 
-                    Uri imageUrg = Uri.fromFile(new File(String.valueOf(data.getData())));
-
-//                    ImageUtils.checkBitmapRotationEXIF(this, imageUrg, bitmap, bitbit -> binding.iv.setImageBitmap(bitbit));
                     int rotationGallery = getRotationFromGallery(this, data.getData());
                     Timber.e("onActivityResult : rotationGallery : %s", rotationGallery);
-                    dateTime = "GGWP";
                 }
-                binding.tvImgDatetime.setText(dateTime);
+                binding.tvImgDatetime.setText(lastModifiedDate);
             } catch (IOException e) {
                 Timber.e("onActivityResult : ERROR");
                 e.printStackTrace();
@@ -179,33 +181,5 @@ public class MainActivity extends AppCompatActivity {
             return imagePath;
         }
         return null;
-    }
-
-    public static String getImageInfo(Context context, Uri photoUri) {
-
-        Cursor cursor = context.getContentResolver().query(photoUri,
-                new String[] {
-                        MediaStore.Images.ImageColumns.ORIENTATION,
-                        MediaStore.Images.ImageColumns.LATITUDE,
-                        MediaStore.Images.ImageColumns.LONGITUDE,
-                        MediaStore.Images.ImageColumns.DATE_TAKEN } , null, null, null);
-
-        if (cursor.getCount() != 1) {
-            return null;
-        }
-
-        cursor.moveToFirst();
-
-        String dateTime = String.valueOf(cursor.getLong(3) / 1000);
-
-//        ImageInfo i = new ImageInfo();
-//        i.Orientation = cursor.getInt(0);
-//        i.Lat = cursor.getDouble(1);
-//        i.Lon = cursor.getDouble(2);
-//        i.DateTakenUTC = cursor.getLong(3)/1000;
-
-        cursor.close();
-
-        return dateTime;
     }
 }
