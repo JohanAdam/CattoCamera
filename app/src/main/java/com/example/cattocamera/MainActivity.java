@@ -13,8 +13,15 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Point;
+import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
@@ -105,8 +112,13 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 String lastModifiedDate = "";
+                Bitmap bitmap1 = bitmap;
                 if (requestCode == RECEIPT_CAMERA) {
-                    ImageUtils.checkBitmapRotationEXIF(this, imageUri, bitmap, returnBitmap -> binding.iv.setImageBitmap(returnBitmap));
+                    ImageUtils.checkBitmapRotationEXIF(this, imageUri, bitmap, returnBitmap -> {
+//                        binding.iv.setImageBitmap(returnBitmap)
+//                        drawTextToBitmap(this, returnBitmap, "GGWP", true);
+                        drawTextToBitmap(this, returnBitmap, "FUCK OFF", "GGWP",false);
+                    });
                     File file = imageUtils.getPhotoFile();
 
                     lastModifiedDate = new Date(file.lastModified()).toString();
@@ -126,6 +138,7 @@ public class MainActivity extends AppCompatActivity {
                     int rotationGallery = getRotationFromGallery(this, data.getData());
                     Timber.e("onActivityResult : rotationGallery : %s", rotationGallery);
                 }
+
                 binding.tvImgDatetime.setText(lastModifiedDate);
             } catch (IOException e) {
                 Timber.e("onActivityResult : ERROR");
@@ -181,5 +194,52 @@ public class MainActivity extends AppCompatActivity {
             return imagePath;
         }
         return null;
+    }
+
+
+    public void drawTextToBitmap(Context gContext,
+                                   Bitmap bitmap,
+                                   String textBottomLeft,
+                                   String textBottomRight,
+                                 boolean isRight) {
+        Resources resources = gContext.getResources();
+        float scale = resources.getDisplayMetrics().density;
+        android.graphics.Bitmap.Config bitmapConfig =
+                bitmap.getConfig();
+        if (bitmapConfig == null) {
+            bitmapConfig = android.graphics.Bitmap.Config.ARGB_8888;
+        }
+        bitmap = bitmap.copy(bitmapConfig, true);
+        Canvas canvas = new Canvas(bitmap);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setColor(getResources().getColor(R.color.white));
+//        paint.setTypeface(Typeface.createFromAsset(getAssets(), "fonts/DS-DIGI.TTF"));
+        paint.setTextSize((int) (14 * scale));
+        paint.setShadowLayer(10f, 1f, 1f, getResources().getColor(R.color.black));
+        Rect bounds = new Rect();
+        paint.getTextBounds(textBottomRight, 0, textBottomRight.length(), bounds);
+
+        //Center.
+//        int x = (bitmap.getWidth() - bounds.width()) / 2;
+//        int y = (bitmap.getHeight() + bounds.height()) / 2;
+
+        //Left bottom.
+//        int x;
+//        int y;
+//        if (isRight) {
+            //Right bottom.
+            int horizontalSpacing = 24;
+            int verticalSpacing = 36;
+            int xRight = (bitmap.getWidth() - bounds.width()) - horizontalSpacing;//(bitmap.getWidth() - bounds.width()) / 2;
+            int yRight = bitmap.getHeight() - verticalSpacing;//(bitmap.getHeight() + bounds.height()) / 2;
+//        } else {
+//            int horizontalSpacing = 24;
+//            int verticalSpacing = 36;
+            int xLeft = horizontalSpacing;//(bitmap.getWidth() - bounds.width()) / 2;
+            int yLeft = bitmap.getHeight()-verticalSpacing;
+//        }
+        canvas.drawText(textBottomRight, xRight, yRight, paint);
+        canvas.drawText(textBottomLeft, xLeft, yLeft, paint);
+        binding.iv.setImageBitmap(bitmap);
     }
 }
