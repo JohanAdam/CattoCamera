@@ -13,6 +13,7 @@ import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.TypedValue;
 
 import androidx.core.content.FileProvider;
 import androidx.exifinterface.media.ExifInterface;
@@ -220,7 +221,11 @@ public class ImageUtils {
     Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     paint.setColor(resources.getColor(R.color.white));
 //        paint.setTypeface(Typeface.createFromAsset(getAssets(), "fonts/DS-DIGI.TTF"));
-    paint.setTextSize((int) (14 * scale));
+
+    double relation = Math.sqrt(canvas.getWidth() * canvas.getHeight()) / 250;
+    paint.setTextSize((float) (8 * relation));
+
+//    paint.setTextSize(pixel);
     paint.setShadowLayer(10f, 1f, 1f, resources.getColor(R.color.black));
     Rect bounds = new Rect();
     paint.getTextBounds(textBottomRight, 0, textBottomRight.length(), bounds);
@@ -234,15 +239,15 @@ public class ImageUtils {
 //        int y;
 //        if (isRight) {
     //Right bottom.
-    int horizontalSpacing = 24;
-    int verticalSpacing = 36;
-    int xRight = (bitmap.getWidth() - bounds.width()) - horizontalSpacing;//(bitmap.getWidth() - bounds.width()) / 2;
-    int yRight = bitmap.getHeight() - verticalSpacing;//(bitmap.getHeight() + bounds.height()) / 2;
+    double horizontalSpacing = 14 * relation;
+    double verticalSpacing = 12 * relation;
+    int xRight = (int) ((bitmap.getWidth() - bounds.width()) - horizontalSpacing);//(bitmap.getWidth() - bounds.width()) / 2;
+    int yRight = (int) (bitmap.getHeight() - verticalSpacing);//(bitmap.getHeight() + bounds.height()) / 2;
 //        } else {
 //            int horizontalSpacing = 24;
 //            int verticalSpacing = 36;
-    int xLeft = horizontalSpacing;//(bitmap.getWidth() - bounds.width()) / 2;
-    int yLeft = bitmap.getHeight()-verticalSpacing;
+    int xLeft = (int) horizontalSpacing;//(bitmap.getWidth() - bounds.width()) / 2;
+    int yLeft = (int) (bitmap.getHeight()-verticalSpacing);
 //        }
     canvas.drawText(textBottomRight, xRight, yRight, paint);
     canvas.drawText(textBottomLeft, xLeft, yLeft, paint);
